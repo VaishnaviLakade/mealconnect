@@ -12,21 +12,26 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 
 // MongoDB connection
-mongoose.connect(process.env.MONGO_URI, {
-  dbName: "MealConnect",
-})
-.then(async () => {
-  console.log("✅ MongoDB Connected");
-  const collections = await mongoose.connection.db.listCollections().toArray();
-  console.log("📚 Collections:", collections.map(c => c.name));
-})
-.catch(err => {
-  console.error("❌ MongoDB Connection Error:", err);
-});
+mongoose
+  .connect(process.env.MONGO_URI, {
+    dbName: "MealConnect",
+  })
+  .then(async () => {
+    console.log("✅ MongoDB Connected");
+    const collections = await mongoose.connection.db
+      .listCollections()
+      .toArray();
+    console.log(
+      "📚 Collections:",
+      collections.map((c) => c.name)
+    );
+  })
+  .catch((err) => {
+    console.error("❌ MongoDB Connection Error:", err);
+  });
 
 // Twilio setup
-const accountSid = "AC5934e71e8f79310fe04d838e4c8d5b4a";
-const authToken = "c36690fb8b29967350d3aa654461bb03";
+
 const client = twilio(accountSid, authToken);
 
 // State objects
@@ -37,9 +42,22 @@ let waitingForCount = {};
 
 // 🔹 Send message to receiver
 app.post("/send-message", async (req, res) => {
-  let { phone, address, people_served, collectionStart, collectionEnd, delay = 0 } = req.body;
+  let {
+    phone,
+    address,
+    people_served,
+    collectionStart,
+    collectionEnd,
+    delay = 0,
+  } = req.body;
 
-  if (!phone || !address || !collectionStart || !collectionEnd || !people_served) {
+  if (
+    !phone ||
+    !address ||
+    !collectionStart ||
+    !collectionEnd ||
+    !people_served
+  ) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
@@ -74,7 +92,7 @@ app.post("/send-message", async (req, res) => {
     setTimeout(async () => {
       if (remainingCapacity > 0 && pendingReceivers.size > 0) {
         const notifyOthers = [...pendingReceivers].filter(
-          p => !confirmedReceivers.some(r => `+91${r.phone}` === p)
+          (p) => !confirmedReceivers.some((r) => `+91${r.phone}` === p)
         );
         for (const number of notifyOthers) {
           await client.messages.create({
@@ -126,12 +144,12 @@ app.post("/webhook", async (req, res) => {
     delete waitingForCount[from];
 
     const receiver = await Receiver.findOne({ phone: from }).maxTimeMS(10000);
-    if (receiver && !confirmedReceivers.some(r => r.phone === from)) {
+    if (receiver && !confirmedReceivers.some((r) => r.phone === from)) {
       confirmedReceivers.push({
         ...receiver.toObject(),
         phone: from,
         count,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       });
     }
 
@@ -141,10 +159,14 @@ app.post("/webhook", async (req, res) => {
       body: `✅ ${count} व्यक्ति भोजन के लिए पंजीकृत किए गए हैं। धन्यवाद!`,
     });
 
-    console.log(`✅ ${from} confirmed for ${count}. Remaining: ${remainingCapacity}`);
+    console.log(
+      `✅ ${from} confirmed for ${count}. Remaining: ${remainingCapacity}`
+    );
 
     if (remainingCapacity <= 0) {
-      const notifyOthers = [...pendingReceivers].filter(p => !confirmedReceivers.some(r => `+91${r.phone}` === p));
+      const notifyOthers = [...pendingReceivers].filter(
+        (p) => !confirmedReceivers.some((r) => `+91${r.phone}` === p)
+      );
       for (const number of notifyOthers) {
         await client.messages.create({
           from: "whatsapp:+14155238886",
@@ -164,7 +186,7 @@ app.post("/webhook", async (req, res) => {
       return res.sendStatus(200);
     }
 
-    if (confirmedReceivers.some(r => r.phone === from)) {
+    if (confirmedReceivers.some((r) => r.phone === from)) {
       console.log(`⚠️ ${from} already confirmed`);
       return res.sendStatus(200);
     }
@@ -183,7 +205,7 @@ app.post("/webhook", async (req, res) => {
   await client.messages.create({
     from: "whatsapp:+14155238886",
     to: `whatsapp:${fullPhone}`,
-    body: "❗ क्षमा करें, संदेश समझ नहीं आया। यदि भोजन चाहिएं तो \"YES\" भेजें।",
+    body: '❗ क्षमा करें, संदेश समझ नहीं आया। यदि भोजन चाहिएं तो "YES" भेजें।',
   });
 
   res.sendStatus(200);
@@ -191,23 +213,22 @@ app.post("/webhook", async (req, res) => {
 
 // 🔹 Get confirmed receivers
 app.get("/api/receivers", (req, res) => {
-  const response = confirmedReceivers.map(r => ({
+  const response = confirmedReceivers.map((r) => ({
     name: r.name,
     phone: r.phone,
     count: r.count,
-    rem:remainingCapacity,
-    timestamp: r.timestamp
+    rem: remainingCapacity,
+    timestamp: r.timestamp,
   }));
   res.json(response);
 });
 
-
 // 🔹 Get pending receivers
 app.get("/api/pending-receivers", (req, res) => {
   const response = [...pendingReceivers]
-    .filter(p => !confirmedReceivers.some(r => `+91${r.phone}` === p))
-    .map(phone => ({
-      phone: phone.replace("+91", "")
+    .filter((p) => !confirmedReceivers.some((r) => `+91${r.phone}` === p))
+    .map((phone) => ({
+      phone: phone.replace("+91", ""),
     }));
   res.json(response);
 });
