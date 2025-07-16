@@ -8,7 +8,7 @@ import UDashboard from "./pages/UDashboard"; // User Dashboard
 import DonateFood from "./pages/Donatefood";
 import Findfood from "./pages/Findfood";
 import Landing from "./pages/Landing";
-import Chatbot from "./components/chatbot";
+import Chatbot from "./components/Chatbot";
 import Profile from "./pages/Profile";
 import Navbar from "./components/Navbar";
 import RequestFood from "./pages/request";
@@ -39,12 +39,10 @@ export default function App() {
             <Route index element={<DonateFood />} /> {/* Default Section */}
             <Route path="donate" element={<DonateFood />} />
             <Route path="addrec" element={<AddReceiver />} />
-
             <Route path="current-donation" element={<CurrentDonation />} />
             <Route path="past-donations" element={<PastDonations />} />
             <Route path="rewards" element={<Rewards />} />
             <Route path="analytics" element={<Analytics />} />
-
           </Route>
 
           {/* ✅ USER DASHBOARD WITH POSSIBLE NESTED ROUTES (IF NEEDED) */}
